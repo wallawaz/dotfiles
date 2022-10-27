@@ -1,0 +1,36 @@
+function query_all_pgpass () {
+  ###
+  # Assumes your ~/.pgpass is setup correctly.
+  ###
+  # $1: Regex to match hostname
+  # $2: Query to run
+
+  REGEX=$1;
+  QUERY=$2;
+  for dbstr in $(grep "$REGEX" ~/.pgpass); do
+    parts=("${(@s/:/)dbstr}");
+    H=$parts[1];
+    DB=$parts[3];
+    USER=$parts[4];
+    PASS=$parts[5];
+    echo $DB;
+
+    echo "$QUERY" | psql -h $H -U $USER $DB
+  done
+}
+
+s3_copy_to_local () {
+  BUCKET=$1
+  GREP=$2
+  PROFILE=$3
+
+  if [ -z $PROFILE ]; then
+    PROFILE="$AWS_DEFAULT_PROFILE"
+  fi
+
+
+  for F in $(aws --profile $PROFILE s3 ls $BUCKET | grep $GREP | awk '{ print $4 }'); do
+    CP_CMD="aws --profile $PROFILE s3 cp ${BUCKET}${F} ."
+    echo $CP_CMD;
+  done
+}
